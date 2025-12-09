@@ -6,7 +6,7 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-ship_or_slip = "7vTkYDA8GcM4JCtrgnDyosw4Jk82qrzKwBhn2uRfQNVS"
+ship_or_slip = "HSkqo48KXh7xF7RLPCqQEtExBH6AqdU4rz6s2odFgYAi"
 
 [registry]
 url = "https://api.apr.dev"
