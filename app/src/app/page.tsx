@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 const GitHubIcon = () => (
@@ -10,33 +11,12 @@ const GitHubIcon = () => (
   </svg>
 );
 
-interface Market {
-  id: string;
-  repo: string;
-  prTitle: string;
-  prNumber: number;
-  deadline: number;
-  shipPool: number;
-  slipPool: number;
-  bettorCount: number;
-}
+interface Market { id: string; repo: string; prTitle: string; prNumber: number; deadline: number; shipPool: number; slipPool: number; bettorCount: number; }
 
 const MOCK_MARKETS: Market[] = [
-  {
-    id: "1", repo: "solana-labs/solana", prTitle: "feat: Optimistic Confirmation & Turbine V2",
-    prNumber: 12345, deadline: Math.floor(Date.now() / 1000) + 4 * 3600,
-    shipPool: 306.17, slipPool: 144.08, bettorCount: 47,
-  },
-  {
-    id: "2", repo: "coral-xyz/anchor", prTitle: "fix: IDL generation for complex types",
-    prNumber: 2891, deadline: Math.floor(Date.now() / 1000) + 12 * 3600,
-    shipPool: 89.5, slipPool: 124.3, bettorCount: 28,
-  },
-  {
-    id: "3", repo: "jito-labs/jito-solana", prTitle: "perf: Bundle processing optimizations",
-    prNumber: 456, deadline: Math.floor(Date.now() / 1000) + 2 * 3600,
-    shipPool: 512.8, slipPool: 201.2, bettorCount: 83,
-  },
+  { id: "1", repo: "solana-labs/solana", prTitle: "feat: Optimistic Confirmation & Turbine V2", prNumber: 12345, deadline: Math.floor(Date.now() / 1000) + 4 * 3600, shipPool: 306.17, slipPool: 144.08, bettorCount: 47 },
+  { id: "2", repo: "coral-xyz/anchor", prTitle: "fix: IDL generation for complex types", prNumber: 2891, deadline: Math.floor(Date.now() / 1000) + 12 * 3600, shipPool: 89.5, slipPool: 124.3, bettorCount: 28 },
+  { id: "3", repo: "jito-labs/jito-solana", prTitle: "perf: Bundle processing optimizations", prNumber: 456, deadline: Math.floor(Date.now() / 1000) + 2 * 3600, shipPool: 512.8, slipPool: 201.2, bettorCount: 83 },
 ];
 
 function MarketCard({ market }: { market: Market }) {
@@ -57,73 +37,28 @@ function MarketCard({ market }: { market: Market }) {
   }, [market.deadline]);
 
   return (
-    <div 
-      className="glass-card group"
-      style={{
-        padding: "16px",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        minHeight: "220px",
-      }}
-    >
-      {/* Header */}
+    <div className="glass-card group" style={{ padding: "16px", display: "flex", flexDirection: "column", height: "100%", minHeight: "200px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
-        <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: "rgba(155,93,229,0.2)", color: "#c4b5fd", border: "1px solid rgba(155,93,229,0.3)" }}>
-          PR #{market.prNumber}
-        </span>
-        <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: "rgba(0,245,212,0.2)", color: "#5eead4", border: "1px solid rgba(0,245,212,0.3)" }}>
-          ⏱️ {timeLeft}
-        </span>
+        <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: "rgba(155,93,229,0.2)", color: "#c4b5fd", border: "1px solid rgba(155,93,229,0.3)" }}>PR #{market.prNumber}</span>
+        <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: "rgba(0,245,212,0.2)", color: "#5eead4", border: "1px solid rgba(0,245,212,0.3)" }}>⏱️ {timeLeft}</span>
       </div>
-      
-      {/* Repo */}
       <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
         <GitHubIcon />
         <span style={{ color: "#9ca3af", fontSize: "12px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{market.repo}</span>
       </div>
-      
-      {/* Title */}
-      <h3 
-        className="font-display group-hover:text-cyan-300"
-        style={{ 
-          fontSize: "14px", 
-          fontWeight: 600, 
-          color: "white", 
-          marginBottom: "12px", 
-          lineHeight: "1.3",
-          display: "-webkit-box",
-          WebkitLineClamp: 2,
-          WebkitBoxOrient: "vertical",
-          overflow: "hidden",
-          minHeight: "36px",
-          transition: "color 0.2s",
-        }}
-      >
-        {market.prTitle}
-      </h3>
-      
-      {/* Progress Bar */}
+      <h3 className="font-display group-hover:text-cyan-300" style={{ fontSize: "14px", fontWeight: 600, color: "white", marginBottom: "12px", lineHeight: "1.3", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", minHeight: "36px", transition: "color 0.2s" }}>{market.prTitle}</h3>
       <div style={{ marginBottom: "12px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            🚀 <span className="neon-text-cyan">{shipPct}%</span>
-          </span>
-          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-            <span className="neon-text-purple">{slipPct}%</span> 🕳️
-          </span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}>🚀 <span className="neon-text-cyan">{shipPct}%</span></span>
+          <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><span className="neon-text-purple">{slipPct}%</span> 🕳️</span>
         </div>
         <div style={{ height: "6px", borderRadius: "9999px", background: "#1f2937", overflow: "hidden", display: "flex" }}>
           <div style={{ width: `${shipPct}%`, background: "linear-gradient(to right, #22d3ee, #06b6d4)" }} />
           <div style={{ width: `${slipPct}%`, background: "linear-gradient(to right, #a855f7, #9333ea)" }} />
         </div>
       </div>
-      
-      {/* Footer */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "12px", paddingTop: "8px", borderTop: "1px solid rgba(0,245,212,0.2)", marginTop: "auto" }}>
-        <span style={{ color: "#9ca3af" }}>
-          <span style={{ color: "white", fontWeight: 600 }}>{totalPool.toFixed(1)}</span> SOL
-        </span>
+        <span style={{ color: "#9ca3af" }}><span style={{ color: "white", fontWeight: 600 }}>{totalPool.toFixed(1)}</span> SOL</span>
         <span style={{ color: "#6b7280" }}>👥 {market.bettorCount}</span>
       </div>
     </div>
@@ -131,14 +66,12 @@ function MarketCard({ market }: { market: Market }) {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   return (
     <div className="min-h-screen circuit-bg relative overflow-hidden">
-      <div className="orb-purple w-80 h-80 -top-32 -right-32" />
-      <div className="orb-cyan w-64 h-64 top-1/3 -left-24" />
-      <div className="orb-purple w-40 h-40 bottom-20 right-10 opacity-50" />
-
-      <div className="relative z-10" style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 48px 96px 48px" }}>
-        {/* Header */}
+      <div className="orb-purple" style={{ width: "320px", height: "320px", top: "-128px", right: "-128px" }} />
+      <div className="orb-cyan" style={{ width: "256px", height: "256px", top: "33%", left: "-96px" }} />
+      <div className="relative z-10" style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 24px 120px 24px" }}>
         <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "48px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span style={{ fontSize: "24px" }}>🚀</span>
@@ -146,89 +79,45 @@ export default function HomePage() {
           </div>
           <WalletMultiButton />
         </header>
-
-        {/* Hero */}
         <section style={{ textAlign: "center", marginBottom: "56px" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 12px", borderRadius: "9999px", background: "rgba(155,93,229,0.2)", border: "1px solid rgba(155,93,229,0.3)", marginBottom: "16px" }}>
             <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#4ade80", animation: "pulse 2s infinite" }} />
             <span style={{ fontSize: "12px", color: "#c4b5fd" }}>Live on Solana Devnet</span>
           </div>
-
           <h1 className="font-display" style={{ fontSize: "clamp(32px, 6vw, 56px)", fontWeight: 900, marginBottom: "12px" }}>
-            <span className="neon-text-cyan">SHIP</span>
-            <span style={{ color: "white", margin: "0 12px" }}>or</span>
-            <span className="neon-text-purple">SLIP</span>
+            <span className="neon-text-cyan">SHIP</span><span style={{ color: "white", margin: "0 12px" }}>or</span><span className="neon-text-purple">SLIP</span>
           </h1>
-
           <p style={{ fontSize: "18px", color: "#d1d5db", marginBottom: "4px" }}>Dev Velocity Arcade</p>
-          <p style={{ color: "#6b7280", fontSize: "14px", maxWidth: "400px", margin: "0 auto" }}>
-            Bet on whether GitHub PRs will ship on time.
-          </p>
-
+          <p style={{ color: "#6b7280", fontSize: "14px", maxWidth: "400px", margin: "0 auto" }}>Bet on whether GitHub PRs will ship on time.</p>
           <div style={{ display: "flex", justifyContent: "center", gap: "48px", marginTop: "24px" }}>
-            <div style={{ textAlign: "center" }}>
-              <div className="font-display neon-text-cyan" style={{ fontSize: "24px", fontWeight: 700 }}>2,847</div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>Total Bets</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div className="font-display" style={{ fontSize: "24px", fontWeight: 700, color: "white" }}>1,245</div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>SOL Pooled</div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div className="font-display neon-text-purple" style={{ fontSize: "24px", fontWeight: 700 }}>67%</div>
-              <div style={{ fontSize: "11px", color: "#6b7280" }}>Ship Rate</div>
-            </div>
+            <div style={{ textAlign: "center" }}><div className="font-display neon-text-cyan" style={{ fontSize: "24px", fontWeight: 700 }}>2,847</div><div style={{ fontSize: "11px", color: "#6b7280" }}>Total Bets</div></div>
+            <div style={{ textAlign: "center" }}><div className="font-display" style={{ fontSize: "24px", fontWeight: 700, color: "white" }}>1,245</div><div style={{ fontSize: "11px", color: "#6b7280" }}>SOL Pooled</div></div>
+            <div style={{ textAlign: "center" }}><div className="font-display neon-text-purple" style={{ fontSize: "24px", fontWeight: 700 }}>67%</div><div style={{ fontSize: "11px", color: "#6b7280" }}>Ship Rate</div></div>
           </div>
         </section>
-
-        {/* Markets */}
         <section style={{ marginBottom: "56px" }}>
           <h2 className="font-display" style={{ fontSize: "20px", fontWeight: 700, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", animation: "pulse 2s infinite" }}></span>
-            Live Markets
+            <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: "#ef4444", animation: "pulse 2s infinite" }}></span>Live Markets
           </h2>
-          
-          {/* 3 Column Grid */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: "repeat(3, 1fr)", 
-            gap: "20px",
-          }}>
-            {MOCK_MARKETS.map((m) => (
-              <Link key={m.id} href={`/market/${m.id}`} style={{ display: "block" }}>
-                <MarketCard market={m} />
-              </Link>
-            ))}
+          <div className="markets-grid">
+            {MOCK_MARKETS.map((m) => (<Link key={m.id} href={`/market/${m.id}`} style={{ display: "block" }}><MarketCard market={m} /></Link>))}
           </div>
         </section>
-
-        {/* How it Works */}
         <section className="glass-card-purple" style={{ padding: "32px" }}>
           <h2 className="font-display" style={{ fontSize: "20px", fontWeight: 700, textAlign: "center", marginBottom: "24px" }}>How It Works</h2>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "24px" }}>
-            {[
-              { emoji: "1️⃣", title: "Pick a PR", desc: "Browse markets" },
-              { emoji: "2️⃣", title: "Make Your Call", desc: "🚀 SHIP or 🕳️ SLIP" },
-              { emoji: "3️⃣", title: "Stake SOL", desc: "On-chain bets" },
-              { emoji: "4️⃣", title: "Collect", desc: "Winners split pool" },
-            ].map((s, i) => (
-              <div key={i} style={{ textAlign: "center" }}>
-                <span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>{s.emoji}</span>
-                <h3 className="font-display" style={{ fontWeight: 600, fontSize: "14px", marginBottom: "4px" }}>{s.title}</h3>
-                <p style={{ fontSize: "11px", color: "#6b7280" }}>{s.desc}</p>
-              </div>
+          <div className="how-it-works-grid">
+            {[{ emoji: "1️⃣", title: "Pick a PR", desc: "Browse markets" },{ emoji: "2️⃣", title: "Make Your Call", desc: "🚀 SHIP or 🕳️ SLIP" },{ emoji: "3️⃣", title: "Stake SOL", desc: "On-chain bets" },{ emoji: "4️⃣", title: "Collect", desc: "Winners split pool" }].map((s, i) => (
+              <div key={i} style={{ textAlign: "center" }}><span style={{ fontSize: "28px", display: "block", marginBottom: "8px" }}>{s.emoji}</span><h3 className="font-display" style={{ fontWeight: 600, fontSize: "14px", marginBottom: "4px" }}>{s.title}</h3><p style={{ fontSize: "11px", color: "#6b7280" }}>{s.desc}</p></div>
             ))}
           </div>
         </section>
       </div>
-
-      {/* Bottom Nav */}
       <nav className="bottom-nav" style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "8px 16px", zIndex: 50 }}>
         <div style={{ maxWidth: "400px", margin: "0 auto", display: "flex", justifyContent: "space-around" }}>
-          <div className="nav-item active"><span style={{ fontSize: "18px" }}>🏠</span><span style={{ fontSize: "10px" }}>Home</span></div>
-          <div className="nav-item"><span style={{ fontSize: "18px" }}>📋</span><span style={{ fontSize: "10px" }}>My Bets</span></div>
-          <div className="nav-item"><span style={{ fontSize: "18px" }}>🏆</span><span style={{ fontSize: "10px" }}>Leaderboard</span></div>
-          <div className="nav-item"><span style={{ fontSize: "18px" }}>👤</span><span style={{ fontSize: "10px" }}>Profile</span></div>
+          <div className="nav-item active" onClick={() => router.push("/")}><span style={{ fontSize: "18px" }}>🏠</span><span style={{ fontSize: "10px" }}>Home</span></div>
+          <div className="nav-item" onClick={() => router.push("/my-bets")}><span style={{ fontSize: "18px" }}>📋</span><span style={{ fontSize: "10px" }}>My Bets</span></div>
+          <div className="nav-item" onClick={() => router.push("/leaderboard")}><span style={{ fontSize: "18px" }}>🏆</span><span style={{ fontSize: "10px" }}>Leaderboard</span></div>
+          <div className="nav-item" onClick={() => router.push("/profile")}><span style={{ fontSize: "18px" }}>👤</span><span style={{ fontSize: "10px" }}>Profile</span></div>
         </div>
       </nav>
     </div>
