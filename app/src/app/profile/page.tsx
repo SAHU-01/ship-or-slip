@@ -7,7 +7,8 @@ import { useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { fetchUserBets } from "@/lib/fetchUserBets";
 import { fetchAllMarkets } from "@/lib/fetchMarkets";
-import { calculateProfileStats, ProfileStats } from "@/lib/badges";
+import { fetchPRStatus } from "@/lib/githubStatus";
+import { calculateProfileStats, ProfileStats, BetWithContext } from "@/lib/badges";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -19,11 +20,25 @@ export default function ProfilePage() {
   const loadProfile = useCallback(async () => {
     if (!publicKey) return;
     setLoading(true);
+    
     const [bets, markets] = await Promise.all([
       fetchUserBets(connection, publicKey),
       fetchAllMarkets(connection)
     ]);
-    const profileStats = calculateProfileStats(bets, markets);
+    
+    // Enrich bets with market and PR status
+    const betsWithContext: BetWithContext[] = await Promise.all(
+      bets.map(async (bet) => {
+        const market = markets.find(m => m.pubkey === bet.market);
+        let prStatus = null;
+        if (market) {
+          prStatus = await fetchPRStatus(market.repo, market.prNumber);
+        }
+        return { ...bet, market, prStatus };
+      })
+    );
+    
+    const profileStats = calculateProfileStats(betsWithContext);
     setStats(profileStats);
     setLoading(false);
   }, [connection, publicKey]);
@@ -71,6 +86,46 @@ export default function ProfilePage() {
                 </div>
               </div>
             </div>
+
+            {/* Pending Outcomes Banner */}
+            {(stats.pendingWins > 0 || stats.pendingLosses > 0) && (
+              <div className="glass-card" style={{ padding: "16px", marginBottom: "16px", background: "rgba(251,191,36,0.1)", borderColor: "rgba(251,191,36,0.3)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#fbbf24", marginBottom: "4px" }}>⏳ Pending Resolution</div>
+                    <div style={{ fontSize: "12px", color: "#9ca3af" }}>
+                      {stats.pendingWins > 0 && <span style={{ color: "#4ade80" }}>{stats.pendingWins} winning</span>}
+                      {stats.pendingWins > 0 && stats.pendingLosses > 0 && " • "}
+                      {stats.pendingLosses > 0 && <span style={{ color: "#f87171" }}>{stats.pendingLosses} losing</span>}
+                    </div>
+                  </div>
+                  {stats.potentialProfit > 0 && (
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "12px", color: "#9ca3af" }}>Potential</div>
+                      <div style={{ fontSize: "16px", fontWeight: 700, color: "#4ade80" }}>+{stats.potentialProfit.toFixed(2)} SOL</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Claimable Banner */}
+            {stats.claimable > 0 && (
+              <div className="glass-card" style={{ padding: "16px", marginBottom: "16px", background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.3)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div>
+                    <div style={{ fontSize: "14px", fontWeight: 600, color: "#4ade80", marginBottom: "4px" }}>💰 Unclaimed Winnings!</div>
+                    <div style={{ fontSize: "12px", color: "#9ca3af" }}>Go to My Bets to claim</div>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>+{stats.claimable.toFixed(2)} SOL</div>
+                  </div>
+                </div>
+                <button onClick={() => router.push("/my-bets")} className="btn-primary" style={{ width: "100%", marginTop: "12px", padding: "10px" }}>
+                  Claim Now →
+                </button>
+              </div>
+            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px", marginBottom: "16px" }}>
               <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
@@ -120,8 +175,12 @@ export default function ProfilePage() {
                   <span style={{ fontWeight: 600 }}>{stats.totalBets}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Pending</span>
-                  <span style={{ fontWeight: 600, color: "#fbbf24" }}>{stats.pending}</span>
+                  <span style={{ color: "#9ca3af" }}>Active</span>
+                  <span style={{ fontWeight: 600, color: "#5eead4" }}>{stats.pending}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                  <span style={{ color: "#9ca3af" }}>Awaiting Payout</span>
+                  <span style={{ fontWeight: 600, color: "#fbbf24" }}>{stats.pendingWins + stats.pendingLosses}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
                   <span style={{ color: "#9ca3af" }}>Total Won</span>
