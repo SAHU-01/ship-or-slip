@@ -3,15 +3,11 @@ import "./globals.css";
 import { WalletProvider } from "@/components/WalletProvider";
 
 export const metadata: Metadata = {
-  title: "Ship or Slip - Dev Velocity Arcade",
-  description: "Bet on whether GitHub PRs will ship on time",
+  title: "Ship or Slip",
+  description: "Bet on GitHub PR deadlines",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
