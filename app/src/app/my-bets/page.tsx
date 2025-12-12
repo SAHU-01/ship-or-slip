@@ -10,8 +10,9 @@ import { fetchAllMarkets, MarketData } from "@/lib/fetchMarkets";
 import { fetchPRStatus, PRStatus } from "@/lib/githubStatus";
 import { claimWinnings } from "@/lib/marketService";
 
-interface BetWithStatus extends BetData {
-  market?: MarketData;
+interface BetWithStatus {
+  bet: BetData;
+  marketData?: MarketData;
   prStatus?: PRStatus | null;
 }
 
@@ -55,18 +56,18 @@ export default function MyBetsPage() {
       fetchAllMarkets(connection)
     ]);
     
-    const betsWithMarketAndStatus: BetWithStatus[] = await Promise.all(
+    const enrichedBets: BetWithStatus[] = await Promise.all(
       betsData.map(async (bet) => {
-        const market = marketsData.find(m => m.pubkey === bet.market);
+        const marketData = marketsData.find(m => m.pubkey === bet.market);
         let prStatus: PRStatus | null = null;
-        if (market) {
-          prStatus = await fetchPRStatus(market.repo, market.prNumber);
+        if (marketData) {
+          prStatus = await fetchPRStatus(marketData.repo, marketData.prNumber);
         }
-        return { ...bet, market, prStatus };
+        return { bet, marketData, prStatus };
       })
     );
     
-    setBetsWithStatus(betsWithMarketAndStatus);
+    setBetsWithStatus(enrichedBets);
     setLoading(false);
   }, [connection, publicKey]);
 
@@ -75,13 +76,13 @@ export default function MyBetsPage() {
     else setLoading(false);
   }, [connected, publicKey, loadData]);
 
-  const handleClaim = async (bet: BetWithStatus) => {
-    if (!bet.market || !wallet.publicKey || !wallet.signTransaction) return;
-    setClaiming(bet.pubkey);
+  const handleClaim = async (item: BetWithStatus) => {
+    if (!item.marketData || !wallet.publicKey || !wallet.signTransaction) return;
+    setClaiming(item.bet.pubkey);
     try {
-      const sig = await claimWinnings(connection, wallet, bet.market.repo, bet.market.prNumber);
+      const sig = await claimWinnings(connection, wallet, item.marketData.repo, item.marketData.prNumber);
       setToast({ message: `🎉 Winnings claimed! TX: ${sig.slice(0, 12)}...`, type: "success" });
-      loadData(); // Refresh to update claimed status
+      loadData();
     } catch (err: any) {
       setToast({ message: err.message || "Failed to claim", type: "error" });
     } finally {
@@ -90,20 +91,20 @@ export default function MyBetsPage() {
   };
 
   const activeBets = betsWithStatus.filter(b => {
-    if (!b.market) return false;
-    if (b.market.status === "resolved") return false;
+    if (!b.marketData) return false;
+    if (b.marketData.status === "resolved") return false;
     if (b.prStatus?.state === "merged" || b.prStatus?.state === "closed") return false;
     return true;
   });
   
   const historyBets = betsWithStatus.filter(b => {
-    if (!b.market) return true;
-    if (b.market.status === "resolved") return true;
+    if (!b.marketData) return true;
+    if (b.marketData.status === "resolved") return true;
     if (b.prStatus?.state === "merged" || b.prStatus?.state === "closed") return true;
     return false;
   });
 
-  const totalStaked = betsWithStatus.reduce((sum, b) => sum + b.amount, 0);
+  const totalStaked = betsWithStatus.reduce((sum, b) => sum + b.bet.amount, 0);
 
   return (
     <div className="min-h-screen circuit-bg relative overflow-hidden">
@@ -159,11 +160,12 @@ export default function MyBetsPage() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                {(tab === "active" ? activeBets : historyBets).map((bet, i) => {
-                  const isDecided = bet.prStatus?.state === "merged" || bet.prStatus?.state === "closed";
-                  const isResolved = bet.market?.status === "resolved";
-                  const didWin = isResolved && bet.market?.outcome === bet.side;
-                  const prOutcome = bet.prStatus?.state === "merged" ? "ship" : "slip";
+                {(tab === "active" ? activeBets : historyBets).map((item, i) => {
+                  const { bet, marketData, prStatus } = item;
+                  const isDecided = prStatus?.state === "merged" || prStatus?.state === "closed";
+                  const isResolved = marketData?.status === "resolved";
+                  const didWin = isResolved && marketData?.outcome === bet.side;
+                  const prOutcome = prStatus?.state === "merged" ? "ship" : "slip";
                   const willWin = isDecided && !isResolved && prOutcome === bet.side;
                   const canClaim = isResolved && didWin && !bet.claimed;
                   
@@ -171,13 +173,13 @@ export default function MyBetsPage() {
                     <div key={i} className="glass-card" style={{ padding: "16px" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                         <div>
-                          <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px" }}>{bet.market?.repo || "Unknown"}</div>
-                          <div style={{ fontSize: "14px", fontWeight: 600, color: "white" }}>PR #{bet.market?.prNumber || "?"}</div>
+                          <div style={{ fontSize: "12px", color: "#6b7280", marginBottom: "4px" }}>{marketData?.repo || "Unknown"}</div>
+                          <div style={{ fontSize: "14px", fontWeight: 600, color: "white" }}>PR #{marketData?.prNumber || "?"}</div>
                         </div>
                         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-                          {bet.prStatus && (
-                            <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: bet.prStatus.state === "open" ? "rgba(74,222,128,0.2)" : bet.prStatus.state === "merged" ? "rgba(34,211,238,0.2)" : "rgba(239,68,68,0.2)", color: bet.prStatus.state === "open" ? "#4ade80" : bet.prStatus.state === "merged" ? "#22d3ee" : "#f87171" }}>
-                              {bet.prStatus.state === "open" ? "🟢 PR Open" : bet.prStatus.state === "merged" ? "🚀 Merged" : "🕳️ Closed"}
+                          {prStatus && (
+                            <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: prStatus.state === "open" ? "rgba(74,222,128,0.2)" : prStatus.state === "merged" ? "rgba(34,211,238,0.2)" : "rgba(239,68,68,0.2)", color: prStatus.state === "open" ? "#4ade80" : prStatus.state === "merged" ? "#22d3ee" : "#f87171" }}>
+                              {prStatus.state === "open" ? "🟢 PR Open" : prStatus.state === "merged" ? "🚀 Merged" : "🕳️ Closed"}
                             </span>
                           )}
                           <span style={{ fontSize: "10px", padding: "4px 8px", borderRadius: "9999px", background: isResolved ? "rgba(155,93,229,0.2)" : isDecided ? "rgba(251,191,36,0.2)" : "rgba(0,245,212,0.2)", color: isResolved ? "#c4b5fd" : isDecided ? "#fbbf24" : "#5eead4" }}>
@@ -192,7 +194,6 @@ export default function MyBetsPage() {
                           <span style={{ color: "#6b7280" }}>{bet.amount.toFixed(2)} SOL</span>
                         </div>
                         
-                        {/* Outcome & Claim */}
                         {isResolved ? (
                           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                             <span style={{ fontWeight: 600, color: didWin ? "#4ade80" : "#f87171" }}>
@@ -200,7 +201,7 @@ export default function MyBetsPage() {
                             </span>
                             {canClaim && (
                               <button
-                                onClick={() => handleClaim(bet)}
+                                onClick={() => handleClaim(item)}
                                 disabled={claiming === bet.pubkey}
                                 style={{
                                   padding: "6px 12px", borderRadius: "8px", fontWeight: 600, fontSize: "12px",

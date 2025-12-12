@@ -26,15 +26,14 @@ export default function ProfilePage() {
       fetchAllMarkets(connection)
     ]);
     
-    // Enrich bets with market and PR status
     const betsWithContext: BetWithContext[] = await Promise.all(
-      bets.map(async (bet) => {
-        const market = markets.find(m => m.pubkey === bet.market);
+      bets.map(async (betData) => {
+        const market = markets.find(m => m.pubkey === betData.market);
         let prStatus = null;
         if (market) {
           prStatus = await fetchPRStatus(market.repo, market.prNumber);
         }
-        return { ...bet, market, prStatus };
+        return { bet: betData, market, prStatus };
       })
     );
     
@@ -75,19 +74,12 @@ export default function ProfilePage() {
               <h1 className="font-display" style={{ fontSize: "24px", fontWeight: 700, marginBottom: "4px" }}>Predictor</h1>
               <p style={{ color: "#6b7280", fontSize: "14px", marginBottom: "12px" }}>{publicKey?.toBase58().slice(0, 4)}...{publicKey?.toBase58().slice(-4)}</p>
               <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
-                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(155,93,229,0.2)", border: "1px solid rgba(155,93,229,0.3)" }}>
-                  <span style={{ fontSize: "12px", color: "#c4b5fd" }}>{stats.totalBets} Bets</span>
-                </div>
-                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(0,245,212,0.2)", border: "1px solid rgba(0,245,212,0.3)" }}>
-                  <span style={{ fontSize: "12px", color: "#5eead4" }}>{stats.badges.length} Badges</span>
-                </div>
-                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(74,222,128,0.2)", border: "1px solid rgba(74,222,128,0.3)" }}>
-                  <span style={{ fontSize: "12px", color: "#4ade80" }}>Devnet Beta</span>
-                </div>
+                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(155,93,229,0.2)", border: "1px solid rgba(155,93,229,0.3)" }}><span style={{ fontSize: "12px", color: "#c4b5fd" }}>{stats.totalBets} Bets</span></div>
+                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(0,245,212,0.2)", border: "1px solid rgba(0,245,212,0.3)" }}><span style={{ fontSize: "12px", color: "#5eead4" }}>{stats.badges.length} Badges</span></div>
+                <div style={{ padding: "6px 16px", borderRadius: "9999px", background: "rgba(74,222,128,0.2)", border: "1px solid rgba(74,222,128,0.3)" }}><span style={{ fontSize: "12px", color: "#4ade80" }}>Devnet Beta</span></div>
               </div>
             </div>
 
-            {/* Pending Outcomes Banner */}
             {(stats.pendingWins > 0 || stats.pendingLosses > 0) && (
               <div className="glass-card" style={{ padding: "16px", marginBottom: "16px", background: "rgba(251,191,36,0.1)", borderColor: "rgba(251,191,36,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -109,7 +101,6 @@ export default function ProfilePage() {
               </div>
             )}
 
-            {/* Claimable Banner */}
             {stats.claimable > 0 && (
               <div className="glass-card" style={{ padding: "16px", marginBottom: "16px", background: "rgba(34,197,94,0.1)", borderColor: "rgba(34,197,94,0.3)" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
@@ -117,13 +108,9 @@ export default function ProfilePage() {
                     <div style={{ fontSize: "14px", fontWeight: 600, color: "#4ade80", marginBottom: "4px" }}>💰 Unclaimed Winnings!</div>
                     <div style={{ fontSize: "12px", color: "#9ca3af" }}>Go to My Bets to claim</div>
                   </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>+{stats.claimable.toFixed(2)} SOL</div>
-                  </div>
+                  <div style={{ fontSize: "20px", fontWeight: 700, color: "#4ade80" }}>+{stats.claimable.toFixed(2)} SOL</div>
                 </div>
-                <button onClick={() => router.push("/my-bets")} className="btn-primary" style={{ width: "100%", marginTop: "12px", padding: "10px" }}>
-                  Claim Now →
-                </button>
+                <button onClick={() => router.push("/my-bets")} className="btn-primary" style={{ width: "100%", marginTop: "12px", padding: "10px" }}>Claim Now →</button>
               </div>
             )}
 
@@ -133,17 +120,11 @@ export default function ProfilePage() {
                 <div style={{ fontSize: "11px", color: "#6b7280" }}>Win Rate</div>
               </div>
               <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
-                <div className="font-display" style={{ fontSize: "28px", fontWeight: 700, color: stats.netProfit >= 0 ? "#4ade80" : "#f87171" }}>
-                  {stats.netProfit >= 0 ? "+" : ""}{stats.netProfit.toFixed(2)}
-                </div>
+                <div className="font-display" style={{ fontSize: "28px", fontWeight: 700, color: stats.netProfit >= 0 ? "#4ade80" : "#f87171" }}>{stats.netProfit >= 0 ? "+" : ""}{stats.netProfit.toFixed(2)}</div>
                 <div style={{ fontSize: "11px", color: "#6b7280" }}>SOL Profit</div>
               </div>
               <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
-                <div className="font-display" style={{ fontSize: "28px", fontWeight: 700 }}>
-                  <span style={{ color: "#4ade80" }}>{stats.wins}</span>
-                  <span style={{ color: "#6b7280" }}>/</span>
-                  <span style={{ color: "#f87171" }}>{stats.losses}</span>
-                </div>
+                <div className="font-display" style={{ fontSize: "28px", fontWeight: 700 }}><span style={{ color: "#4ade80" }}>{stats.wins}</span><span style={{ color: "#6b7280" }}>/</span><span style={{ color: "#f87171" }}>{stats.losses}</span></div>
                 <div style={{ fontSize: "11px", color: "#6b7280" }}>W/L Record</div>
               </div>
               <div className="glass-card" style={{ padding: "16px", textAlign: "center" }}>
@@ -170,30 +151,19 @@ export default function ProfilePage() {
             <div className="glass-card" style={{ padding: "20px", marginBottom: "16px" }}>
               <h3 className="font-display" style={{ fontSize: "16px", fontWeight: 600, marginBottom: "16px" }}>📊 Detailed Stats</h3>
               <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Total Bets</span>
-                  <span style={{ fontWeight: 600 }}>{stats.totalBets}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Active</span>
-                  <span style={{ fontWeight: 600, color: "#5eead4" }}>{stats.pending}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Awaiting Payout</span>
-                  <span style={{ fontWeight: 600, color: "#fbbf24" }}>{stats.pendingWins + stats.pendingLosses}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Total Won</span>
-                  <span style={{ fontWeight: 600, color: "#4ade80" }}>+{stats.totalWon.toFixed(2)} SOL</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ color: "#9ca3af" }}>Total Lost</span>
-                  <span style={{ fontWeight: 600, color: "#f87171" }}>-{stats.totalLost.toFixed(2)} SOL</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>
-                  <span style={{ color: "#9ca3af" }}>Biggest Bet</span>
-                  <span style={{ fontWeight: 600 }}>{stats.maxBet.toFixed(2)} SOL</span>
-                </div>
+                {[
+                  { label: "Total Bets", value: stats.totalBets, color: "white" },
+                  { label: "Active", value: stats.pending, color: "#5eead4" },
+                  { label: "Awaiting Payout", value: stats.pendingWins + stats.pendingLosses, color: "#fbbf24" },
+                  { label: "Total Won", value: `+${stats.totalWon.toFixed(2)} SOL`, color: "#4ade80" },
+                  { label: "Total Lost", value: `-${stats.totalLost.toFixed(2)} SOL`, color: "#f87171" },
+                  { label: "Biggest Bet", value: `${stats.maxBet.toFixed(2)} SOL`, color: "white" },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i < 5 ? "1px solid rgba(255,255,255,0.05)" : "none" }}>
+                    <span style={{ color: "#9ca3af" }}>{item.label}</span>
+                    <span style={{ fontWeight: 600, color: item.color }}>{item.value}</span>
+                  </div>
+                ))}
               </div>
             </div>
 

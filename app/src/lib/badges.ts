@@ -28,7 +28,8 @@ export const ALL_BADGES: Record<string, Badge> = {
   slipper: { id: "slipper", name: "Slipper", emoji: "🕳️", desc: "Won a SLIP bet" },
 };
 
-export interface BetWithContext extends BetData {
+export interface BetWithContext {
+  bet: BetData;
   market?: MarketData;
   prStatus?: PRStatus | null;
 }
@@ -54,21 +55,17 @@ export interface ProfileStats {
 export function calculateProfileStats(bets: BetWithContext[]): ProfileStats {
   let wins = 0, losses = 0, pending = 0, pendingWins = 0, pendingLosses = 0;
   let totalWon = 0, totalLost = 0, potentialProfit = 0, claimable = 0;
-  const totalStaked = bets.reduce((sum, b) => sum + b.amount, 0);
-  const maxBet = bets.length > 0 ? Math.max(...bets.map(b => b.amount)) : 0;
+  const totalStaked = bets.reduce((sum, b) => sum + b.bet.amount, 0);
+  const maxBet = bets.length > 0 ? Math.max(...bets.map(b => b.bet.amount)) : 0;
   
   let hasShipWin = false, hasSlipWin = false;
 
-  for (const bet of bets) {
-    const market = bet.market;
-    const prStatus = bet.prStatus;
-    
+  for (const { bet, market, prStatus } of bets) {
     if (!market) {
       pending++;
       continue;
     }
     
-    // Market is resolved on-chain
     if (market.status === "resolved") {
       if (market.outcome === bet.side) {
         wins++;
@@ -85,9 +82,7 @@ export function calculateProfileStats(bets: BetWithContext[]): ProfileStats {
         losses++;
         totalLost += bet.amount;
       }
-    }
-    // PR decided but market not yet resolved
-    else if (prStatus?.state === "merged" || prStatus?.state === "closed") {
+    } else if (prStatus?.state === "merged" || prStatus?.state === "closed") {
       const prOutcome = prStatus.state === "merged" ? "ship" : "slip";
       if (prOutcome === bet.side) {
         pendingWins++;
@@ -100,9 +95,7 @@ export function calculateProfileStats(bets: BetWithContext[]): ProfileStats {
       } else {
         pendingLosses++;
       }
-    }
-    // Still active
-    else {
+    } else {
       pending++;
     }
   }
@@ -111,7 +104,6 @@ export function calculateProfileStats(bets: BetWithContext[]): ProfileStats {
   const winRate = resolvedBets > 0 ? (wins / resolvedBets) * 100 : 0;
   const netProfit = totalWon - totalLost - totalStaked;
 
-  // Calculate badges
   const earnedBadges: Badge[] = [];
   
   if (bets.length >= 1) earnedBadges.push(ALL_BADGES.first_blood);
